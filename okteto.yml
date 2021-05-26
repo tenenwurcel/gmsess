@@ -1,0 +1,15 @@
+name: rel4-gmsess
+image: okteto/golang:1
+command: bash
+securityContext:
+  capabilities:
+    add:
+    - SYS_PTRACE
+volumes:
+- /go/pkg/
+- /root/.cache/go-build/
+sync:
+- .:/usr/src/app
+forward:
+- 2399:2399
+- 9000:9000

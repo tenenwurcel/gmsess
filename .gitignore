@@ -1,0 +1,5 @@
+*.bk
+*.exe
+gmsess
+nano.save
+go.sum

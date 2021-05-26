@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-gmsess
+spec:
+  # minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-gmsess
+  replicas: 1
+  template: # template for the pods
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-gmsess
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-gmsess
+        image: ghcr.io/tenenwurcel/gmsess:1.0.3
+        env:
+          - name: REDISHOST
+            value: "redis-master"
+          - name: REDISPORT
+            value: "6379"
+          - name: REDISPWD
+            valueFrom:
+              secretKeyRef:
+                name: session-redis
+                key: pwd
+      imagePullSecrets:
+      - name: regcred
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-gmsess
+  labels:
+    app: {{ .Release.Name }}-gmsess
+  annotations:
+    dev.okteto.com/auto-ingress: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: {{ .Release.Name }}-gmsess

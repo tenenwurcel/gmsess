@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "../proto";
+
+
+// STATE CRIADO NESSE SERVIÇO
+service Authenticator {
+    rpc Authenticate (Session) returns (SID) {}
+    rpc New (Void) returns (Session) {}
+}
+
+message Void {}
+
+message SID {
+    string s = 1;
+}
+
+// The response message containing the greetings
+message Session {
+    string sid = 1;
+    string state = 2;
+    string discordToken = 3;
+}
