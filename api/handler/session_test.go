@@ -18,14 +18,14 @@ func TestMain(m *testing.M) {
 	utils.SetupVerifier()
 	config.SetupRedis()
 
-	sessionRepo := _repo.NewSessionRepository(config.GetRedisCli())
+	sessionRepo := _repo.NewRedisRepository(config.GetRedisCli())
 	sessionEntity := _entity.NewSesssionEntity(sessionRepo)
 	handler = NewSessionHandler(sessionEntity)
 	m.Run()
 }
 
 func TestNew(t *testing.T) {
-	sid, err := handler.New(context.Background(), &proto.Void{})
+	sid, err := handler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
 	}

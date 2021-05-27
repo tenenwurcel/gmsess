@@ -7,6 +7,7 @@ import (
 	"gmsess/proto"
 	"gmsess/utils"
 
+	"github.com/go-redis/redis/v8"
 	"golang.org/x/net/context"
 )
 
@@ -15,15 +16,15 @@ type SID struct {
 }
 
 type SessionEntity struct {
-	repo   domain.SessionRepository
+	repo   domain.RedisRepository
 	cypher utils.Cypher
 }
 
-func NewSesssionEntity(repo domain.SessionRepository) domain.SessionEntity {
+func NewSesssionEntity(repo domain.RedisRepository) domain.SessionEntity {
 	return &SessionEntity{repo: repo, cypher: utils.GetCypher()}
 }
 
-func (e *SessionEntity) New(ctx context.Context, sess *proto.Session) (err error) {
+func (e *SessionEntity) New(ctx context.Context, sess *proto.NewResponse) (err error) {
 	//Create session
 	session := domain.NewSession()
 
@@ -35,35 +36,43 @@ func (e *SessionEntity) New(ctx context.Context, sess *proto.Session) (err error
 
 	sess.State = session.State
 	sess.Sid, err = e.cypher.Encrypt(session.SID)
+	if err != nil {
+		return
+	}
+	sess.RefreshToken, err = e.cypher.Encrypt(session.RefreshToken)
 	return
 }
 
-func (e *SessionEntity) Authenticate(ctx context.Context, sess *proto.Session) (string, error) {
+func (e *SessionEntity) Authenticate(ctx context.Context, sess *proto.AuthenticateRequest, sid *proto.AuthenticateResponse) error {
 	// Decrypt token
 	decryptedSID, err := e.cypher.Decrypt(sess.Sid)
 	if err != nil {
-		return "", errors.New("Invalid token.")
+		return errors.New("Invalid token.")
 	}
 
 	// Check if sid exists in the storage engine
-	//@TODO Change it to Fetch and check if null in this context
-	verified, err := e.repo.Check(ctx, decryptedSID)
-	if err != nil {
-		return "", errors.New("Internal error.")
-	}
-	if !verified {
-		return "", errors.New("Invalid token.")
+	curSess, err := e.repo.Fetch(ctx, decryptedSID)
+	if err == redis.Nil {
+		return errors.New("Invalid token.")
+	} else if err != nil {
+		return err
+	} else if curSess.State != sess.State {
+		return errors.New("Invalid CRSF token.")
 	}
 
 	//Get current validator and append it to token - Return sid
 	currentValidationToken := utils.Verifier.GetCurrent()
-	validatedToken := fmt.Sprintf("%s.%s", decryptedSID, currentValidationToken)
-	s, err := e.cypher.Encrypt(validatedToken)
+	authenticatedToken := fmt.Sprintf("%s.%s", decryptedSID, currentValidationToken)
+	sid.Sid, err = e.cypher.Encrypt(authenticatedToken)
 	if err != nil {
-		return "", errors.New("Internal error.")
+		return errors.New("Internal error.")
 	}
 
-	return s, nil
+	return nil
 }
 
-//@TODO Add CheckState function(ctx context.Context, sess *proto.Session) (err error) {}
+/*func (e *SessionEntity) Authorize(ctx context.Context, sess *proto.Session) error {
+	return nil
+}*/
+
+//func (e *SessionEntity) Refresh(ctx context.Context, sess *proto.Session)

@@ -16,14 +16,18 @@ func NewSessionHandler(sessionEntity domain.SessionEntity) *SessionHandler {
 	return &SessionHandler{sessionEntity: sessionEntity}
 }
 
-func (s *SessionHandler) Authenticate(ctx context.Context, sess *proto.Session) (sid *proto.SID, err error) {
-	sid.S, err = s.sessionEntity.Authenticate(ctx, sess)
+func (s *SessionHandler) Authenticate(ctx context.Context, sess *proto.AuthenticateRequest) (*proto.AuthenticateResponse, error) {
+	authResponse := new(proto.AuthenticateResponse)
+	err := s.sessionEntity.Authenticate(ctx, sess, authResponse)
+	if err != nil {
+		return new(proto.AuthenticateResponse), err
+	}
 
-	return
+	return authResponse, nil
 }
 
-func (s *SessionHandler) New(ctx context.Context, _ *proto.Void) (*proto.Session, error) {
-	sess := new(proto.Session)
+func (s *SessionHandler) New(ctx context.Context, _ *proto.NewRequest) (*proto.NewResponse, error) {
+	sess := new(proto.NewResponse)
 	err := s.sessionEntity.New(ctx, sess)
 	if err != nil {
 		return sess, err

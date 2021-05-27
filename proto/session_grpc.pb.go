@@ -18,8 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthenticatorClient interface {
-	Authenticate(ctx context.Context, in *Session, opts ...grpc.CallOption) (*SID, error)
-	New(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Session, error)
+	New(ctx context.Context, in *NewRequest, opts ...grpc.CallOption) (*NewResponse, error)
+	Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
 }
 
 type authenticatorClient struct {
@@ -30,18 +30,18 @@ func NewAuthenticatorClient(cc grpc.ClientConnInterface) AuthenticatorClient {
 	return &authenticatorClient{cc}
 }
 
-func (c *authenticatorClient) Authenticate(ctx context.Context, in *Session, opts ...grpc.CallOption) (*SID, error) {
-	out := new(SID)
-	err := c.cc.Invoke(ctx, "/pb.Authenticator/Authenticate", in, out, opts...)
+func (c *authenticatorClient) New(ctx context.Context, in *NewRequest, opts ...grpc.CallOption) (*NewResponse, error) {
+	out := new(NewResponse)
+	err := c.cc.Invoke(ctx, "/pb.Authenticator/New", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authenticatorClient) New(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Session, error) {
-	out := new(Session)
-	err := c.cc.Invoke(ctx, "/pb.Authenticator/New", in, out, opts...)
+func (c *authenticatorClient) Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error) {
+	out := new(AuthenticateResponse)
+	err := c.cc.Invoke(ctx, "/pb.Authenticator/Authenticate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func (c *authenticatorClient) New(ctx context.Context, in *Void, opts ...grpc.Ca
 // All implementations must embed UnimplementedAuthenticatorServer
 // for forward compatibility
 type AuthenticatorServer interface {
-	Authenticate(context.Context, *Session) (*SID, error)
-	New(context.Context, *Void) (*Session, error)
+	New(context.Context, *NewRequest) (*NewResponse, error)
+	Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error)
 	mustEmbedUnimplementedAuthenticatorServer()
 }
 
@@ -61,11 +61,11 @@ type AuthenticatorServer interface {
 type UnimplementedAuthenticatorServer struct {
 }
 
-func (UnimplementedAuthenticatorServer) Authenticate(context.Context, *Session) (*SID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Authenticate not implemented")
-}
-func (UnimplementedAuthenticatorServer) New(context.Context, *Void) (*Session, error) {
+func (UnimplementedAuthenticatorServer) New(context.Context, *NewRequest) (*NewResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method New not implemented")
+}
+func (UnimplementedAuthenticatorServer) Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Authenticate not implemented")
 }
 func (UnimplementedAuthenticatorServer) mustEmbedUnimplementedAuthenticatorServer() {}
 
@@ -80,26 +80,8 @@ func RegisterAuthenticatorServer(s grpc.ServiceRegistrar, srv AuthenticatorServe
 	s.RegisterService(&Authenticator_ServiceDesc, srv)
 }
 
-func _Authenticator_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Session)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthenticatorServer).Authenticate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Authenticator/Authenticate",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthenticatorServer).Authenticate(ctx, req.(*Session))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Authenticator_New_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Void)
+	in := new(NewRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -111,7 +93,25 @@ func _Authenticator_New_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/pb.Authenticator/New",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthenticatorServer).New(ctx, req.(*Void))
+		return srv.(AuthenticatorServer).New(ctx, req.(*NewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Authenticator_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthenticateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthenticatorServer).Authenticate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Authenticator/Authenticate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthenticatorServer).Authenticate(ctx, req.(*AuthenticateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -124,12 +124,12 @@ var Authenticator_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AuthenticatorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Authenticate",
-			Handler:    _Authenticator_Authenticate_Handler,
-		},
-		{
 			MethodName: "New",
 			Handler:    _Authenticator_New_Handler,
+		},
+		{
+			MethodName: "Authenticate",
+			Handler:    _Authenticator_Authenticate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

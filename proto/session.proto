@@ -6,19 +6,23 @@ option go_package = "../proto";
 
 // STATE CRIADO NESSE SERVIÇO
 service Authenticator {
-    rpc Authenticate (Session) returns (SID) {}
-    rpc New (Void) returns (Session) {}
+    rpc New (NewRequest) returns (NewResponse) {}
+    rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse) {}
 }
 
-message Void {}
+message NewRequest {}
 
-message SID {
-    string s = 1;
-}
-
-// The response message containing the greetings
-message Session {
+message NewResponse {
     string sid = 1;
     string state = 2;
-    string discordToken = 3;
+    string refresh_token = 3;
+}
+
+message AuthenticateRequest {
+    string sid = 1;
+    string state = 2;
+}
+
+message AuthenticateResponse {
+    string sid = 1;
 }
