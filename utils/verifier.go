@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type verifier struct {
-	previous *[]byte
-	current  *[]byte
-	locker   *sync.RWMutex
+	previous  *[]byte
+	current   *[]byte
+	locker    *sync.RWMutex
+	startTime *time.Time
 }
 
 var Verifier *verifier
@@ -21,11 +23,13 @@ var Verifier *verifier
 func SetupVerifier() {
 	randomBytes := make([]byte, 8)
 	rand.Read(randomBytes)
+	startTime := time.Now()
 
 	v := &verifier{
-		previous: &randomBytes,
-		current:  &randomBytes,
-		locker:   &sync.RWMutex{},
+		previous:  &randomBytes,
+		current:   &randomBytes,
+		locker:    &sync.RWMutex{},
+		startTime: &startTime,
 	}
 
 	setVerifier(v)
@@ -55,18 +59,27 @@ func (v *verifier) Verify(pwd string) (err error) {
 
 	pwdBytes, err := hex.DecodeString(pwd)
 	if err != nil {
-		return
+		return status.Error(codes.Internal, "error parsing hex string")
 	}
 
 	if bytes.Compare(pwdBytes, *v.previous) == 0 {
-		return errors.New("Expired token!")
+		return status.Error(codes.PermissionDenied, "expired token")
 	}
 
 	if bytes.Compare(pwdBytes, *v.current) == 0 {
 		return nil
 	}
 
-	return errors.New("Invalid token!")
+	return status.Error(codes.Unauthenticated, "invalid token")
+}
+
+func (v *verifier) GetExpiration() int64 {
+	v.locker.RLock()
+	defer v.locker.RUnlock()
+
+	now := time.Now()
+	diff := now.Sub(*v.startTime)
+	return diff.Milliseconds()
 }
 
 func (v *verifier) GetCurrent() string {
@@ -93,5 +106,5 @@ func (v *verifier) update() {
 	newPwd := make([]byte, 8)
 	rand.Read(newPwd)
 	*v.current = newPwd
-	fmt.Println(hex.EncodeToString(*v.current))
+	*v.startTime = time.Now()
 }

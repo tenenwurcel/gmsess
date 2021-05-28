@@ -3,26 +3,48 @@ syntax = "proto3";
 package pb;
 option go_package = "../proto";
 
-
-// STATE CRIADO NESSE SERVIÇO
 service Authenticator {
     rpc New (NewRequest) returns (NewResponse) {}
     rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse) {}
+    rpc Verify (VerifyRequest) returns (VerifyResponse) {}
+    rpc Refresh (RefreshRequest) returns (RefreshResponse) {}
 }
 
 message NewRequest {}
 
+//@TODO - Implement expires
 message NewResponse {
     string sid = 1;
     string state = 2;
     string refresh_token = 3;
+    int64  expire = 4;
 }
 
 message AuthenticateRequest {
     string sid = 1;
     string state = 2;
+    string discord_token = 3;
+    string permission = 4;
 }
 
 message AuthenticateResponse {
+    string sid = 1;
+}
+
+message VerifyRequest {
+    string sid = 1;
+    string wanted_permission = 2;
+}
+
+message VerifyResponse {
+    bool valid = 1;
+}
+
+message RefreshRequest {
+    string sid = 1;
+    string refresh_token = 2;
+}
+
+message RefreshResponse {
     string sid = 1;
 }

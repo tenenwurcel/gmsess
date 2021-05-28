@@ -35,3 +35,25 @@ func (s *SessionHandler) New(ctx context.Context, _ *proto.NewRequest) (*proto.N
 
 	return sess, nil
 }
+
+func (s *SessionHandler) Refresh(ctx context.Context, refreshReq *proto.RefreshRequest) (*proto.RefreshResponse, error) {
+	refreshRes := new(proto.RefreshResponse)
+
+	err := s.sessionEntity.Refresh(ctx, refreshReq, refreshRes)
+	if err != nil {
+		return &proto.RefreshResponse{}, err
+	}
+
+	return refreshRes, nil
+}
+
+func (s *SessionHandler) Verify(ctx context.Context, verifyReq *proto.VerifyRequest) (*proto.VerifyResponse, error) {
+	verifyRes := new(proto.VerifyResponse)
+
+	err := s.sessionEntity.Verify(ctx, verifyReq, verifyRes)
+	if err != nil {
+		return &proto.VerifyResponse{}, err
+	}
+
+	return verifyRes, nil
+}

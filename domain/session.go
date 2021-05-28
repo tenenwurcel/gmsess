@@ -8,6 +8,7 @@ import (
 )
 
 type Session struct {
+	Permission   string
 	SID          string
 	DiscordToken string
 	State        string
@@ -16,6 +17,7 @@ type Session struct {
 
 func NewSession() Session {
 	return Session{
+		Permission:   "",
 		SID:          uuid.New().String(),
 		DiscordToken: "",
 		State:        uuid.New().String(),
@@ -25,4 +27,6 @@ func NewSession() Session {
 type SessionEntity interface {
 	New(ctx context.Context, sess *proto.NewResponse) error
 	Authenticate(ctx context.Context, sess *proto.AuthenticateRequest, sid *proto.AuthenticateResponse) error
+	Refresh(ctx context.Context, req *proto.RefreshRequest, res *proto.RefreshResponse) error
+	Verify(ctx context.Context, req *proto.VerifyRequest, res *proto.VerifyResponse) error
 }

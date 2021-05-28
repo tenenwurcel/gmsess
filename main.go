@@ -24,17 +24,12 @@ func main() {
 	}
 
 	redisRepository := _repo.NewRedisRepository(config.GetRedisCli())
-
 	sessionEntity := _entity.NewSesssionEntity(redisRepository)
 	sessionHandler := _handler.NewSessionHandler(sessionEntity)
-
-	authorizationEntity := _entity.NewAuthorizationEntity(redisRepository)
-	authorizationHandler := _handler.NewAuthorizationHandler(authorizationEntity)
 
 	grpcServer := grpc.NewServer()
 
 	proto.RegisterAuthenticatorServer(grpcServer, sessionHandler)
-	proto.RegisterAuthorizationServer(grpcServer, authorizationHandler)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
