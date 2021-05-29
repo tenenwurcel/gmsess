@@ -112,6 +112,7 @@ func (e *SessionEntity) Verify(ctx context.Context, verifyReq *proto.VerifyReque
 		return status.Error(codes.Unauthenticated, "permission denied")
 	}
 
+	verifyRes.Valid = true
 	return nil
 }
 
@@ -143,6 +144,7 @@ func (e *SessionEntity) Refresh(ctx context.Context, refreshReq *proto.RefreshRe
 			}
 
 			refreshRes.Sid = token
+			return nil
 		}
 
 		return err

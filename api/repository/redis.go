@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gmsess/domain"
+	"strings"
 
 	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/codes"
@@ -32,8 +33,9 @@ func (s *RedisRepository) New(ctx context.Context, sess domain.Session) error {
 	return nil
 }
 
-func (s *RedisRepository) Fetch(ctx context.Context, sid string) (*domain.Session, error) {
+func (s *RedisRepository) Fetch(ctx context.Context, token string) (*domain.Session, error) {
 	session := new(domain.Session)
+	sid := strings.Split(token, ".")[0]
 
 	res, err := s.redisCli.Get(ctx, sid).Result()
 	if err == redis.Nil {

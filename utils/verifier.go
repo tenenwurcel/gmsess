@@ -12,24 +12,24 @@ import (
 )
 
 type verifier struct {
-	previous  *[]byte
-	current   *[]byte
-	locker    *sync.RWMutex
-	startTime *time.Time
+	previous           *[]byte
+	current            *[]byte
+	locker             *sync.RWMutex
+	startTime          *time.Time
+	forceUpdateForTest chan struct{}
 }
 
 var Verifier *verifier
 
 func SetupVerifier() {
-	randomBytes := make([]byte, 8)
-	rand.Read(randomBytes)
 	startTime := time.Now()
 
 	v := &verifier{
-		previous:  &randomBytes,
-		current:   &randomBytes,
-		locker:    &sync.RWMutex{},
-		startTime: &startTime,
+		previous:           CreateRandomBytes(),
+		current:            CreateRandomBytes(),
+		locker:             &sync.RWMutex{},
+		startTime:          &startTime,
+		forceUpdateForTest: make(chan struct{}),
 	}
 
 	setVerifier(v)
@@ -39,6 +39,10 @@ func SetupVerifier() {
 	go func() {
 		for {
 			select {
+			//Should be only used for testing purposes.
+			case <-Verifier.forceUpdateForTest:
+				Verifier.update()
+				v.forceUpdateForTest <- struct{}{}
 			case <-ticker.C:
 				Verifier.update()
 			case <-quit:
@@ -53,6 +57,19 @@ func setVerifier(v *verifier) {
 	Verifier = v
 }
 
+func CreateRandomBytes() *[]byte {
+	randomBytes := make([]byte, 8)
+	rand.Read(randomBytes)
+
+	return &randomBytes
+}
+
+// This function should only be used for testing purposes.
+func (v *verifier) ForceUpdateForTest() {
+	v.forceUpdateForTest <- struct{}{}
+	<-v.forceUpdateForTest
+}
+
 func (v *verifier) Verify(pwd string) (err error) {
 	v.locker.RLock()
 	defer v.locker.RUnlock()
@@ -62,12 +79,12 @@ func (v *verifier) Verify(pwd string) (err error) {
 		return status.Error(codes.Internal, "error parsing hex string")
 	}
 
-	if bytes.Compare(pwdBytes, *v.previous) == 0 {
-		return status.Error(codes.PermissionDenied, "expired token")
-	}
-
 	if bytes.Compare(pwdBytes, *v.current) == 0 {
 		return nil
+	}
+
+	if bytes.Compare(pwdBytes, *v.previous) == 0 {
+		return status.Error(codes.PermissionDenied, "expired token")
 	}
 
 	return status.Error(codes.Unauthenticated, "invalid token")
@@ -103,8 +120,6 @@ func (v *verifier) update() {
 	defer v.locker.Unlock()
 
 	*v.previous = *v.current
-	newPwd := make([]byte, 8)
-	rand.Read(newPwd)
-	*v.current = newPwd
+	*v.current = *CreateRandomBytes()
 	*v.startTime = time.Now()
 }
