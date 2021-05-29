@@ -7,16 +7,16 @@ import (
 	_repo "gmsess/api/repository"
 	"gmsess/config"
 	"gmsess/proto"
-	"gmsess/utils"
 	"strings"
 	"testing"
 )
 
+//@TODO - Create functions to validate tokens - too verbose.
 var handler *SessionHandler
 
 func TestMain(m *testing.M) {
-	utils.SetupCypher()
-	utils.SetupVerifier()
+	config.SetupCypher()
+	config.SetupVerifier()
 	config.SetupRedis()
 
 	sessionRepo := _repo.NewRedisRepository(config.GetRedisCli())
@@ -31,28 +31,24 @@ func TestNew(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
 	if len(sid.Sid) != 128 {
 		t.Error("invalid sid len")
 		return
 	}
 
-	cypher := utils.GetCypher()
+	cypher := config.GetCypher()
 
 	decryptedToken, err := cypher.Decrypt(sid.Sid)
-
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	splitToken := strings.Split(decryptedToken, "-")
-
 	if len(splitToken) != 5 {
 		t.Error("invalid UUID")
 		return
 	}
-
 	for _, tokenPart := range splitToken {
 		_, err = hex.DecodeString(tokenPart)
 		if err != nil {
@@ -84,7 +80,7 @@ func TestAuthenticate(t *testing.T) {
 		t.Error("invalid authenticated sid len")
 	}
 
-	cypher := utils.GetCypher()
+	cypher := config.GetCypher()
 
 	decryptedToken, err := cypher.Decrypt(sid.Sid)
 	if err != nil {
@@ -153,7 +149,7 @@ func TestVerify(t *testing.T) {
 }
 
 func TestRefresh(t *testing.T) {
-	cypher := utils.GetCypher()
+	cypher := config.GetCypher()
 	newRes, err := handler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
@@ -172,7 +168,7 @@ func TestRefresh(t *testing.T) {
 		return
 	}
 
-	utils.Verifier.ForceUpdateForTest()
+	config.Verifier.ForceUpdateForTest()
 
 	refreshReq := &proto.RefreshRequest{Sid: sid.Sid, RefreshToken: newRes.RefreshToken}
 	refreshRes, err := handler.Refresh(context.Background(), refreshReq)
@@ -187,12 +183,25 @@ func TestRefresh(t *testing.T) {
 		return
 	}
 
-	splitToken := strings.Split(decryptedToken, "-")
-	if len(splitToken) != 5 {
-		t.Error("invalid UUID")
+	splitedToken := strings.Split(decryptedToken, ".")
+	if len(splitedToken) != 2 {
+		t.Error("invalid authorized token")
 		return
 	}
-	for _, tokenPart := range splitToken {
+	if len(splitedToken[1]) != 16 {
+		t.Error("invalid verification token len")
+		return
+	}
+
+	_, err = hex.DecodeString(splitedToken[1])
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	decryptedSid := splitedToken[0]
+	splitSid := strings.Split(decryptedSid, "-")
+	for _, tokenPart := range splitSid {
 		_, err = hex.DecodeString(tokenPart)
 		if err != nil {
 			t.Error(err)

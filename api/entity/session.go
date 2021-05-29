@@ -2,6 +2,7 @@ package entity
 
 import (
 	"fmt"
+	"gmsess/config"
 	"gmsess/domain"
 	"gmsess/proto"
 	"gmsess/utils"
@@ -22,7 +23,7 @@ type SessionEntity struct {
 }
 
 func NewSesssionEntity(repo domain.RedisRepository) domain.SessionEntity {
-	return &SessionEntity{repo: repo, cypher: utils.GetCypher()}
+	return &SessionEntity{repo: repo, cypher: config.GetCypher()}
 }
 
 func (e *SessionEntity) New(ctx context.Context, sess *proto.NewResponse) (err error) {
@@ -35,7 +36,7 @@ func (e *SessionEntity) New(ctx context.Context, sess *proto.NewResponse) (err e
 		return
 	}
 
-	sess.Expire = utils.Verifier.GetExpiration()
+	sess.Expire = config.Verifier.GetExpiration()
 	sess.RefreshToken, err = e.cypher.Encrypt(session.RefreshToken)
 	sess.State = session.State
 	sess.Sid, err = e.cypher.Encrypt(session.SID)
@@ -72,7 +73,7 @@ func (e *SessionEntity) Authenticate(ctx context.Context, sess *proto.Authentica
 	}
 
 	//Get current validator and append it to token - Return sid
-	currentValidationToken := utils.Verifier.GetCurrent()
+	currentValidationToken := config.Verifier.GetCurrent()
 	authenticatedToken := fmt.Sprintf("%s.%s", decryptedSID, currentValidationToken)
 	sid.Sid, err = e.cypher.Encrypt(authenticatedToken)
 	if err != nil {
@@ -96,7 +97,7 @@ func (e *SessionEntity) Verify(ctx context.Context, verifyReq *proto.VerifyReque
 	}
 
 	//Check if token verifier matches current token
-	err = utils.Verifier.Verify(splitedToken[1])
+	err = config.Verifier.Verify(splitedToken[1])
 	if err != nil {
 		return err
 	}
@@ -130,12 +131,12 @@ func (e *SessionEntity) Refresh(ctx context.Context, refreshReq *proto.RefreshRe
 	}
 
 	//Check if token verifier matches current token
-	err = utils.Verifier.Verify(splitedToken[1])
+	err = config.Verifier.Verify(splitedToken[1])
 	if err != nil {
 		grpcError := status.Convert(err)
 
 		if grpcError.Code() == codes.PermissionDenied {
-			decryptedToken := fmt.Sprintf("%s.%s", splitedToken[0], utils.Verifier.GetCurrent())
+			decryptedToken := fmt.Sprintf("%s.%s", splitedToken[0], config.Verifier.GetCurrent())
 
 			token, err := e.cypher.Encrypt(decryptedToken)
 

@@ -6,7 +6,6 @@ import (
 	_repo "gmsess/api/repository"
 	"gmsess/config"
 	"gmsess/proto"
-	"gmsess/utils"
 	"log"
 	"net"
 
@@ -14,9 +13,9 @@ import (
 )
 
 func main() {
-	utils.SetupCypher()
-	utils.SetupVerifier()
 	config.SetupRedis()
+	config.SetupCypher()
+	config.SetupVerifier()
 
 	lis, err := net.Listen("tcp", ":9000")
 	if err != nil {

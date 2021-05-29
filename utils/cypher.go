@@ -13,25 +13,6 @@ import (
 
 type Cypher []byte
 
-var cypher *Cypher
-
-func SetupCypher() {
-	randBytes := make([]byte, 32)
-	rand.Read(randBytes)
-
-	Cypher := Cypher(randBytes)
-
-	setCypher(&Cypher)
-}
-
-func setCypher(Cypher *Cypher) {
-	cypher = Cypher
-}
-
-func GetCypher() Cypher {
-	return *cypher
-}
-
 func (cy *Cypher) Encrypt(s string) (string, error) {
 	c, err := aes.NewCipher(*cy)
 	if err != nil {
