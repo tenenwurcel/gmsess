@@ -1,5 +1,4 @@
-<h1 align="center">GuildMaster Session</h1>
-<p align="center">
-Session Controller Microservice using no authentication frameworks and GRPC. \n
-This service, will later on, be integrated with a microservice responsible for discord oauth2 flow
-</p>
+#GuildMaster Session
+
+##Session Controller Microservice using no authentication frameworks and GRPC.
+##This service, will later on, be integrated with a microservice responsible for discord oauth2 flow
