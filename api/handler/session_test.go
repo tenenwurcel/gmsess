@@ -6,13 +6,14 @@ import (
 	_entity "gmsess/api/entity"
 	_repo "gmsess/api/repository"
 	"gmsess/config"
-	"gmsess/proto"
 	"strings"
 	"testing"
+
+	proto "github.com/tenenwurcel/gmprotos/session"
 )
 
 //@TODO - Create functions to validate tokens - too verbose.
-var handler *SessionHandler
+var lHandler *SessionHandler
 
 func TestMain(m *testing.M) {
 	config.SetupCypher()
@@ -21,12 +22,12 @@ func TestMain(m *testing.M) {
 
 	sessionRepo := _repo.NewRedisRepository(config.GetRedisCli())
 	sessionEntity := _entity.NewSesssionEntity(sessionRepo)
-	handler = NewSessionHandler(sessionEntity)
+	lHandler = NewSessionHandler(sessionEntity)
 	m.Run()
 }
 
 func TestNew(t *testing.T) {
-	sid, err := handler.New(context.Background(), &proto.NewRequest{})
+	sid, err := lHandler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -59,7 +60,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	newRes, err := handler.New(context.Background(), &proto.NewRequest{})
+	newRes, err := lHandler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -71,7 +72,7 @@ func TestAuthenticate(t *testing.T) {
 		Permission:   "c",
 		DiscordToken: "1237819287301982730918273091872309817908",
 	}
-	sid, err := handler.Authenticate(context.Background(), authReq)
+	sid, err := lHandler.Authenticate(context.Background(), authReq)
 	if err != nil {
 		t.Error(err)
 		return
@@ -116,7 +117,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestVerify(t *testing.T) {
-	newRes, err := handler.New(context.Background(), &proto.NewRequest{})
+	newRes, err := lHandler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -128,7 +129,7 @@ func TestVerify(t *testing.T) {
 		Permission:   "c",
 		DiscordToken: "1237819287301982730918273091872309817908",
 	}
-	sid, err := handler.Authenticate(context.Background(), authReq)
+	sid, err := lHandler.Authenticate(context.Background(), authReq)
 	if err != nil {
 		t.Error(err)
 		return
@@ -138,7 +139,7 @@ func TestVerify(t *testing.T) {
 		Sid:              sid.Sid,
 		WantedPermission: "c",
 	}
-	verified, err := handler.Verify(context.Background(), verifyReq)
+	verified, err := lHandler.Verify(context.Background(), verifyReq)
 	if err != nil {
 		t.Error(err)
 		return
@@ -150,7 +151,7 @@ func TestVerify(t *testing.T) {
 
 func TestRefresh(t *testing.T) {
 	cypher := config.GetCypher()
-	newRes, err := handler.New(context.Background(), &proto.NewRequest{})
+	newRes, err := lHandler.New(context.Background(), &proto.NewRequest{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -162,7 +163,7 @@ func TestRefresh(t *testing.T) {
 		Permission:   "c",
 		DiscordToken: "1237819287301982730918273091872309817908",
 	}
-	sid, err := handler.Authenticate(context.Background(), authReq)
+	sid, err := lHandler.Authenticate(context.Background(), authReq)
 	if err != nil {
 		t.Error(err)
 		return
@@ -171,7 +172,7 @@ func TestRefresh(t *testing.T) {
 	config.Verifier.ForceUpdateForTest()
 
 	refreshReq := &proto.RefreshRequest{Sid: sid.Sid, RefreshToken: newRes.RefreshToken}
-	refreshRes, err := handler.Refresh(context.Background(), refreshReq)
+	refreshRes, err := lHandler.Refresh(context.Background(), refreshReq)
 	if err != nil {
 		t.Error(err)
 		return
@@ -213,7 +214,7 @@ func TestRefresh(t *testing.T) {
 		Sid:              refreshRes.Sid,
 		WantedPermission: "c",
 	}
-	verified, err := handler.Verify(context.Background(), verifyReq)
+	verified, err := lHandler.Verify(context.Background(), verifyReq)
 	if err != nil {
 		t.Error(err)
 		return

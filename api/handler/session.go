@@ -2,7 +2,8 @@ package handler
 
 import (
 	"gmsess/domain"
-	"gmsess/proto"
+
+	proto "github.com/tenenwurcel/gmprotos/session"
 
 	"golang.org/x/net/context"
 )

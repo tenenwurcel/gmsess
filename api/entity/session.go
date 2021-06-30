@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"gmsess/config"
 	"gmsess/domain"
-	"gmsess/proto"
 	"gmsess/utils"
 	"strings"
+
+	proto "github.com/tenenwurcel/gmprotos/session"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"

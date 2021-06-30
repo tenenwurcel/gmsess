@@ -5,9 +5,10 @@ import (
 	_handler "gmsess/api/handler"
 	_repo "gmsess/api/repository"
 	"gmsess/config"
-	"gmsess/proto"
 	"log"
 	"net"
+
+	proto "github.com/tenenwurcel/gmprotos/session"
 
 	"google.golang.org/grpc"
 )

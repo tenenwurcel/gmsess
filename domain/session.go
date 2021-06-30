@@ -2,7 +2,8 @@ package domain
 
 import (
 	"context"
-	"gmsess/proto"
+
+	proto "github.com/tenenwurcel/gmprotos/session"
 
 	"github.com/google/uuid"
 )
