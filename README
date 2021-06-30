@@ -1,4 +1,0 @@
-#GuildMaster Session
-
-##Session Controller Microservice using no authentication frameworks and GRPC.
-##This service, will later on, be integrated with a microservice responsible for discord oauth2 flow
